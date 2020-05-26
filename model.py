@@ -23,11 +23,10 @@ class consumer(multiprocessing.Process):
 
     async def real_work(self, id):
         while self.run_flag:
+            await asyncio.sleep(0.1)
             try:
                 token = self.q.get_nowait()
             except:
-                # Important...transfer owership to other coroutine
-                await asyncio.sleep(0.001)
                 continue
             await asyncio.get_event_loop().run_in_executor(None, self.simulate_io_bound_work)
             print(id, ' get ', token)
@@ -35,22 +34,25 @@ class consumer(multiprocessing.Process):
     def simulate_io_bound_work(self):
         time.sleep(5)
 
+
 class model():
     def __init__(self):
         self.q = multiprocessing.Queue(1000)
-        self.consumer_num = 10
+        self.consumer_num = 50
         self.run_flag = multiprocessing.Value('B', 1)
         self.consumer = consumer(self.consumer_num, self.q, self.run_flag)
 
     def run(self):
-        i = 0
         self.consumer.start()
+        for i in range(1,51):
+            self.q.put(i)
+        i = 50
         while self.run_flag:
             try:
                 i += 1
                 time.sleep(1)
                 self.q.put(i)
-                print('Put ', i)
+                #print('Put ', i)
             except KeyboardInterrupt:
                 print('KeyboardInterrupt caught. Exiting...')
                 quit()
