@@ -23,7 +23,8 @@ class consumer(multiprocessing.Process):
 
     async def real_work(self, id):
         while self.run_flag:
-            await asyncio.sleep(0.1)
+            # Relinquish control to event loop, create a round robin style scheduling
+            await asyncio.sleep(0)
             try:
                 token = self.q.get_nowait()
             except:
@@ -38,15 +39,15 @@ class consumer(multiprocessing.Process):
 class model():
     def __init__(self):
         self.q = multiprocessing.Queue(1000)
-        self.consumer_num = 50
+        self.consumer_num = 100
         self.run_flag = multiprocessing.Value('B', 1)
         self.consumer = consumer(self.consumer_num, self.q, self.run_flag)
 
     def run(self):
         self.consumer.start()
-        for i in range(1,51):
+        for i in range(1,101):
             self.q.put(i)
-        i = 50
+        i = 100
         while self.run_flag:
             try:
                 i += 1
